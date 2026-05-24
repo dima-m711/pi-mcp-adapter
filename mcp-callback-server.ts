@@ -6,6 +6,7 @@
  */
 
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from "http"
+import * as net from "node:net"
 import {
   OAUTH_CALLBACK_PATH,
   getConfiguredOAuthCallbackPort,
@@ -83,6 +84,18 @@ interface EnsureCallbackServerOptions {
   strictPort?: boolean
   /** If set, start (or reuse) a dedicated server on this specific port */
   port?: number
+}
+
+/** Obtain a random available local port by binding to port 0. */
+async function getRandomPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer()
+    srv.listen(0, "localhost", () => {
+      const addr = srv.address() as net.AddressInfo
+      srv.close(() => resolve(addr.port))
+    })
+    srv.on("error", reject)
+  })
 }
 
 /**
@@ -211,9 +224,25 @@ export async function ensureCallbackServer(options: EnsureCallbackServerOptions 
     await stopCallbackServer()
   }
 
-  const preferredPort = configuredPort
-  const maxAttempts = strictPort ? 1 : MAX_PORT_SCAN_ATTEMPTS
   let lastError: Error | undefined
+
+  // For non-strict dynamic registration flows, use a random OS-assigned port
+  // (matches behaviour of Claude Code and other MCP clients)
+  if (!strictPort) {
+    const randomPort = await getRandomPort()
+    const candidateServer = createServer(makeHandleRequest(pendingAuths))
+    await new Promise<void>((resolve, reject) => {
+      candidateServer.once("error", reject)
+      candidateServer.listen(randomPort, "localhost", resolve)
+    })
+    server = candidateServer
+    server.unref()
+    setOAuthCallbackPort(randomPort)
+    return
+  }
+
+  const preferredPort = configuredPort
+  const maxAttempts = 1 // strictPort is always true here
 
   for (let offset = 0; offset < maxAttempts; offset++) {
     const candidatePort = preferredPort + offset

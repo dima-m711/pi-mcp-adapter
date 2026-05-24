@@ -118,7 +118,9 @@ export class McpOAuthProvider implements OAuthClientProvider {
       client_uri: "https://github.com/nicobailon/pi-mcp-adapter",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
-      token_endpoint_auth_method: this.config.clientSecret ? "client_secret_post" : "none",
+      ...(this.config.clientSecret
+        ? { token_endpoint_auth_method: "client_secret_post" as const }
+        : {}),
     }
   }
 
