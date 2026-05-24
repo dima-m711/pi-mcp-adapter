@@ -61,6 +61,8 @@ export interface McpOAuthConfig {
   scope?: string
   /** Per-server OAuth callback port (overrides global MCP_OAUTH_CALLBACK_PORT) */
   callbackPort?: number
+  /** Client name sent during dynamic registration (defaults to "Claude Code") */
+  clientName?: string
 }
 
 /** Callbacks for OAuth flow interactions */
@@ -100,7 +102,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
   get clientMetadata(): OAuthClientMetadata {
     if (this.usesClientCredentials) {
       return {
-        client_name: "Pi Coding Agent",
+        client_name: this.config.clientName ?? "Pi Coding Agent",
         redirect_uris: [],
         grant_types: ["client_credentials"],
         token_endpoint_auth_method: this.config.clientSecret ? "client_secret_post" : "none",
@@ -114,7 +116,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
 
     return {
       redirect_uris: [redirectUrl],
-      client_name: "Claude Code",
+      client_name: this.config.clientName ?? "Pi Coding Agent",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       ...(this.config.clientSecret
