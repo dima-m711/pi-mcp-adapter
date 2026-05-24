@@ -272,6 +272,8 @@ export interface OAuthConfig {
   clientSecret?: string;
   /** Requested OAuth scopes */
   scope?: string;
+  /** Per-server OAuth callback port (overrides global MCP_OAUTH_CALLBACK_PORT) */
+  callbackPort?: number;
 }
 
 // Server configuration

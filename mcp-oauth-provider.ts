@@ -59,6 +59,8 @@ export interface McpOAuthConfig {
   clientId?: string
   clientSecret?: string
   scope?: string
+  /** Per-server OAuth callback port (overrides global MCP_OAUTH_CALLBACK_PORT) */
+  callbackPort?: number
 }
 
 /** Callbacks for OAuth flow interactions */
@@ -88,7 +90,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
    */
   get redirectUrl(): string | undefined {
     if (this.usesClientCredentials) return undefined
-    return `http://localhost:${getOAuthCallbackPort()}${OAUTH_CALLBACK_PATH}`
+    return `http://localhost:${this.config.callbackPort ?? getOAuthCallbackPort()}${OAUTH_CALLBACK_PATH}`
   }
 
   /**

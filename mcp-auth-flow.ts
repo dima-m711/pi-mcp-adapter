@@ -62,6 +62,7 @@ function extractOAuthConfig(definition: ServerEntry): McpOAuthConfig {
     clientId: definition.oauth?.clientId,
     clientSecret: definition.oauth?.clientSecret,
     scope: definition.oauth?.scope,
+    callbackPort: definition.oauth?.callbackPort,
   }
 }
 
@@ -97,8 +98,9 @@ export async function startAuth(
   }
 
   // Start the callback server.
+  // Per-server callbackPort takes priority; otherwise use global.
   // Pre-registered OAuth clients require an exact redirect URI, so enforce strict port binding.
-  await ensureCallbackServer({ strictPort: Boolean(config.clientId) })
+  await ensureCallbackServer({ strictPort: Boolean(config.clientId), port: config.callbackPort })
 
   const oauthState = generateState()
   await updateOAuthState(serverName, oauthState, serverUrl)
@@ -186,7 +188,7 @@ export async function authenticate(
     }
 
     // Register the callback BEFORE opening the browser
-    const callbackPromise = waitForCallback(oauthState)
+    const callbackPromise = waitForCallback(oauthState, definition?.oauth !== false ? definition?.oauth?.callbackPort : undefined)
 
     try {
       // Open browser
