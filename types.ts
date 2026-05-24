@@ -272,6 +272,10 @@ export interface OAuthConfig {
   clientSecret?: string;
   /** Requested OAuth scopes */
   scope?: string;
+  /** Per-server OAuth callback port (overrides global MCP_OAUTH_CALLBACK_PORT) */
+  callbackPort?: number;
+  /** Client name sent during dynamic registration (defaults to "Claude Code") */
+  clientName?: string;
 }
 
 // Server configuration
